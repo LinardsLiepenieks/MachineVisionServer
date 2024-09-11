@@ -71,6 +71,15 @@ FOR macOS/Linux
    python manage.py migrate
    ```
 
+   ### Adding database to .gitignore
+
+   Add the following lines to your `.gitignore` file:
+
+   ```
+   db.sqlite3
+   dump.rdb
+   ```
+
 3. Create a superuser (admin account):
 
    ```
