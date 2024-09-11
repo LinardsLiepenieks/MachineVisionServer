@@ -94,7 +94,7 @@ FOR macOS/Linux
    To connect to the server via mobile device use your computers ip address as the endpoint.
    YOU NEED TO BE CONNECTED ON THE SAME NETWORK.
 
-   # Installing Redis Server (Version 5 or higher)
+# Installing Redis Server (Version 5 or higher)
 
 Redis is an open-source, in-memory data structure store used as a database, cache, message broker, and queue. This guide will help you install Redis server version 5 or higher on various operating systems.
 
