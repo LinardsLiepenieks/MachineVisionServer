@@ -94,6 +94,89 @@ FOR macOS/Linux
    To connect to the server via mobile device use your computers ip address as the endpoint.
    YOU NEED TO BE CONNECTED ON THE SAME NETWORK.
 
+   # Installing Redis Server (Version 5 or higher)
+
+Redis is an open-source, in-memory data structure store used as a database, cache, message broker, and queue. This guide will help you install Redis server version 5 or higher on various operating systems.
+
+## Prerequisites
+
+- Administrative access to your system
+- Internet connection
+
+## Windows
+
+Redis doesn't officially support Windows. However, you can use Windows Subsystem for Linux (WSL) or a third-party build.
+
+1. Install WSL by following Microsoft's official guide.
+2. Once WSL is installed, follow the Linux instructions below.
+
+Alternatively, you can use the unofficial Windows port from [tporadowski/redis](https://github.com/tporadowski/redis/releases).
+
+## macOS
+
+Use Homebrew to install Redis:
+
+```bash
+brew install redis
+```
+
+To start Redis:
+
+```bash
+brew services start redis
+```
+
+## Linux (Ubuntu/Debian)
+
+1. Update your package list:
+
+   ```bash
+   sudo apt update
+   ```
+
+2. Install Redis:
+
+   ```bash
+   sudo apt install redis-server
+   ```
+
+3. Verify the installation:
+   ```bash
+   redis-server --version
+   ```
+
+## Verifying Redis Version
+
+After installation, verify that you have Redis 5 or higher:
+
+```bash
+redis-cli --version
+```
+
+## Starting Redis Server
+
+On most systems, Redis will start automatically after installation. If it doesn't:
+
+```bash
+sudo systemctl start redis-server
+```
+
+## Testing Redis
+
+To test if Redis is working correctly:
+
+1. Start the Redis CLI:
+
+   ```bash
+   redis-cli
+   ```
+
+2. Type `ping` and press Enter. If Redis is running, it should respond with `PONG`.
+
+3. Exit the Redis CLI by typing `exit` and pressing Enter.
+
+Remember to secure your Redis installation in production environments by setting a password and configuring appropriate network settings.
+
 ## Deactivating the Virtual Environment
 
 When you're done working in the virtual environment:
