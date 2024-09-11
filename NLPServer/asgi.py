@@ -13,15 +13,17 @@ from django.core.asgi import get_asgi_application
 from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.auth import AuthMiddlewareStack
 import api.routing
-from api.middleware import APIWSKeyAuthMiddleware
+from api.middleware import APIWSKeyAuthMiddleware, RoutingErrorMiddleware
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'NLPServer.settings')
 
 application = ProtocolTypeRouter({
     "http": get_asgi_application(),
     "websocket": APIWSKeyAuthMiddleware(
-        URLRouter(
-            api.routing.websocket_urlpatterns
+        RoutingErrorMiddleware(
+            URLRouter(
+                api.routing.websocket_urlpatterns
+            )
         )
     ),
 })

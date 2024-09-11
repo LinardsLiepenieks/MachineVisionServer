@@ -27,6 +27,11 @@ class ApiConsumer(AsyncWebsocketConsumer):
 
         self.type_group = f'{self.auth_type}_group'
         await self.accept()
+        await self.send(text_data=json.dumps({
+            'type': 'auth_response',
+            'message': f"{self.auth_type} {self.auth_object} successfully connected",
+            'status': 'success'
+        }))
 
     def _log_and_deny(self, message):
         logger.error(message)

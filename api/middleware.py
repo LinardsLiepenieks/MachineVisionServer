@@ -1,8 +1,10 @@
 from channels.middleware import BaseMiddleware
 from channels.db import database_sync_to_async
+from channels.exceptions import DenyConnection
 from django.contrib.auth.models import AnonymousUser
 from django.core.exceptions import ObjectDoesNotExist
 import logging
+import json
 from typing import Dict, Any
 
 logger = logging.getLogger(__name__)
@@ -46,3 +48,23 @@ class APIWSKeyAuthMiddleware(BaseMiddleware):
         scope['auth_object'] = auth_result['object']
                 
         return await super().__call__(scope, receive, send)
+    
+
+class RoutingErrorMiddleware(BaseMiddleware):
+    async def __call__(self, scope, receive, send):
+        try:
+            await super().__call__(scope, receive, send)
+        except ValueError as e:
+            if 'No route found' in str(e):
+                # Send a close event
+                await send({
+                    'type': 'websocket.accept'
+                })
+
+                await send({
+                    'type': 'websocket.close',
+                    'code': 4001,
+                })
+
+            else:
+                raise e

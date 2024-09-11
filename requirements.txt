@@ -8,6 +8,7 @@ catalogue==2.0.10
 certifi==2024.7.4
 cffi==1.16.0
 channels==3.0.5
+channels-redis==4.2.0
 charset-normalizer==3.3.2
 click==8.1.7
 cloudpathlib==0.18.1
@@ -28,6 +29,7 @@ marisa-trie==1.2.0
 markdown-it-py==3.0.0
 MarkupSafe==2.1.5
 mdurl==0.1.2
+msgpack==1.1.0
 murmurhash==1.0.10
 numpy==1.26.4
 packaging==24.1
