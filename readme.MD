@@ -44,53 +44,55 @@ Once your virtual environment is activated:
 pip install -r requirements.txt
 ```
 
+Install the spacy model - run the post install script
+
+FOR WINDOWS
+
+```
+post_install.bat
+```
+
+FOR macOS/Linux
+
+```
+./post_install.sh
+```
+
 ## First-time Setup with Django
 
-1. Install Django (if not in requirements.txt):
+(use python3 on mac os)
+
+1. Configure your database in `myproject/settings.py` (SQLite is default)
+
+2. Migrate the database:
 
    ```
-   pip install django
-   ```
-
-2. Create a new Django project:
-
-   ```
-   django-admin startproject myproject
-   ```
-
-3. Navigate to the project directory:
-
-   ```
-   cd myproject
-   ```
-
-4. Create a new app (optional):
-
-   ```
-   python manage.py startapp myapp
-   ```
-
-5. Configure your database in `myproject/settings.py` (SQLite is default)
-
-6. Migrate the database:
-
-   ```
+   python manage.py makemigrations
    python manage.py migrate
    ```
 
-7. Create a superuser (admin account):
+3. Create a superuser (admin account):
 
    ```
    python manage.py createsuperuser
    ```
 
-8. Run the development server:
+4. Run the development server:
 
    ```
    python manage.py runserver
    ```
 
    Your Django site should now be accessible at `http://127.0.0.1:8000/`
+
+   To connect to the server via app run
+
+   ```
+   python manage.py runserver 0.0.0.0:8000
+   ```
+
+   To connect to the server via mobile device use your computers ip address as the endpoint.
+   YOU NEED TO BE CONNECTED ON THE SAME NETWORK.
 
 ## Deactivating the Virtual Environment
 
