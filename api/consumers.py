@@ -1,7 +1,7 @@
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 import logging
-from channels.exceptions import DenyConnection
+from channels.exceptions import DenyConnection, StopConsumer
 from .messages.transcribe import speech_to_text
 from .messages.analyze import find_object
 import io
@@ -18,13 +18,13 @@ class ApiConsumer(AsyncWebsocketConsumer):
         self.channel_layer = get_channel_layer()
         if not self.channel_layer:
             self._log_and_deny("Channel layer is not configured")
-
         self.auth_type = self.scope.get('auth_type')
         self.auth_object = self.scope.get('auth_object')
-
-        if not self._validate_auth():
+        
+        if not await self._validate_auth():
             return
-
+        
+        logger.error("FURTHER")
         self.type_group = f'{self.auth_type}_group'
         await self.accept()
         await self.send(text_data=json.dumps({
@@ -37,13 +37,15 @@ class ApiConsumer(AsyncWebsocketConsumer):
         logger.error(message)
         raise DenyConnection(message)
 
-    def _validate_auth(self):
+    async def _validate_auth(self):
+
         if self.auth_type == 'anonymous':
             self._log_and_deny("Anonymous connection attempt")
             return False
         if hasattr(self, 'consumer_type') and self.consumer_type != self.auth_type:
-            self._log_and_deny(f"Consumer type does not match auth type")
-            return False
+            await self.accept()
+            await self.close(code=4003)
+            raise StopConsumer()
         return True
 
     async def disconnect(self, close_code):
@@ -65,6 +67,7 @@ class ApiConsumer(AsyncWebsocketConsumer):
 
 class UserConsumer(ApiConsumer):
     async def connect(self):
+        logger.error("USERCONS")
         self.consumer_type = "user"
         self.search_group = "machine_group"
         self.machine_rooms = []
