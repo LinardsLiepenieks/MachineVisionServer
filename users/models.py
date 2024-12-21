@@ -9,7 +9,6 @@ class Profile(models.Model):
     machines = models.ManyToManyField(Machine, through='ProfileMachine', related_name='profiles')
     
 
-
     def __str__(self):
         return f"{self.user.username}'s Profile"
 

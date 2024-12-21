@@ -1,82 +1,96 @@
 from channels.middleware import BaseMiddleware
 from channels.db import database_sync_to_async
-from django.contrib.auth.models import AnonymousUser
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 import logging
-import json
 from typing import Dict, Any
+from .models import ApiKey
+from .websocket_handling.handler import WebSocketConnectionHandler
 
 logger = logging.getLogger(__name__)
 
-@database_sync_to_async
-def get_user_or_machine_from_api_key(api_key: str) -> Dict[str, Any]:
-    from .models import APIKey, MachineApiKey
 
-    api_key_models = [APIKey, MachineApiKey]
-
-    for model in api_key_models:
-        try:
-            api_key_obj = model.objects.get(key=api_key, is_active=True)
-            if isinstance(api_key_obj, APIKey):
-                #logger.info("Valid user API key used")
-                return {'type': 'user', 'object': api_key_obj.profile.user}
-            elif isinstance(api_key_obj, MachineApiKey):
-                #logger.info("Valid machine API key used")  
-                return {'type': 'machine', 'object': api_key_obj.machine}
-
-        except (ObjectDoesNotExist, ValidationError):
-            continue
-
-
-    #logger.warning(f"Invalid API key used")
-    return {'type': 'error', 'object': None}
-
-class APIWSKeyAuthMiddleware(BaseMiddleware):
+class ApiKeyValidationMiddleware(BaseMiddleware):
     async def __call__(self, scope: Dict[str, Any], receive: Any, send: Any) -> Any:
-        headers = dict(scope['headers'])
-        authorization = headers.get(b'sec-websocket-protocol', b'').decode('utf-8')
+        try:
+            headers = dict(scope["headers"])
+            authorization_header = self._extract_header(
+                headers, "sec-websocket-protocol"
+            )
+            api_key = self._extract_api_key(authorization_header)
 
-        api_key = authorization.split(' ')[-1] if authorization.startswith('Bearer ') else authorization
-        if api_key:
-            auth_result = await get_user_or_machine_from_api_key(api_key)
-        else:                
-            logger.warning("No API key found in headers")
-            auth_result = {'type': 'error', 'object': None}
+            if not api_key:
+                await WebSocketConnectionHandler.reject_invalid_api_key(send)
+                return
 
-        if auth_result['type'] == 'error':
-            # Send a close event with error code 4002
-            await send({
-                    'type': 'websocket.accept'
-                })
+            auth_result = await self._validate_api_key(api_key, send)
+            if not auth_result:
+                return
 
-            await send({
-                'type': 'websocket.close',
-                'code': 4002,
-            })
+            scope["auth_type"] = auth_result["type"]
+            scope["auth_object"] = auth_result["object"]
+            return await super().__call__(scope, receive, send)
+
+        except Exception as e:
+            logger.error(f"API key validation error: {str(e)}")
+            await WebSocketConnectionHandler.reject_invalid_api_key(send)
             return
 
-        scope['auth_type'] = auth_result['type']
-        scope['auth_object'] = auth_result['object']
-                
-        return await super().__call__(scope, receive, send)
-    
+    def _extract_header(self, headers: dict, header_name: str) -> str:
+        return headers.get(header_name.encode(), b"").decode("utf-8")
 
-class RoutingErrorMiddleware(BaseMiddleware):
+    def _extract_api_key(self, header: str) -> str:
+        if not header:
+            return None
+
+        # Split header into parts and validate format
+        parts = header.strip().split()
+
+        # Check if it's a Bearer token
+        if len(parts) == 2 and parts[0].lower() == "bearer":
+            return parts[1]
+        # Check if it's a single token (backwards compatibility)
+        if len(parts) == 1 and parts[0]:
+            return parts[0]
+
+        return None
+
+    async def _validate_api_key(self, api_key: str, send: Any) -> Dict[str, Any] | None:
+        """Validate the API key and handle validation errors."""
+        try:
+            auth_result = await self._find_api_key(api_key)
+            if auth_result["type"] == "error":
+                await WebSocketConnectionHandler.reject_invalid_api_key(send)
+                return None
+            return auth_result
+
+        except ValidationError:
+            await WebSocketConnectionHandler.reject_malformed_api_key(send)
+            return None
+
+    @database_sync_to_async
+    def _find_api_key(self, key: str) -> Dict[str, Any]:
+        """Finds and validates an API key across all APIKey subclasses."""
+        try:
+            for model in ApiKey.get_all_subclasses():
+                try:
+                    api_key = model.objects.get(key=key, is_active=True)
+                    return api_key.get_auth_object()
+                except ObjectDoesNotExist:
+                    continue
+            return {"type": "error", "object": None}
+        except ValidationError:
+            # Re-raise the ValidationError to be caught in __call__
+            raise
+
+
+class InvalidRouteErrorMiddleware(BaseMiddleware):
+    """Middleware that handles websocket routing errors by sending a custom close code 4001 when an invalid route is accessed."""
+
     async def __call__(self, scope, receive, send):
         try:
             await super().__call__(scope, receive, send)
         except ValueError as e:
-            if 'No route found' in str(e):
-                # Send a close event
-                await send({
-                    'type': 'websocket.accept'
-                })
-
-                await send({
-                    'type': 'websocket.close',
-                    'reason': 'invalid route',
-                    'code': 4001,
-                })
-
-            else:
+            if "No route found" in str(e):
+                await WebSocketConnectionHandler.reject_invalid_route(send)
+                logger.error(f"Unexpected ValueError: {str(e)}")
                 raise e

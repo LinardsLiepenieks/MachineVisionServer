@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from django.dispatch import receiver
 from django.db import transaction
 from .models import Profile
-from api.models import APIKey
+from api.models import UserAPIKey
 import uuid
 import logging
 
@@ -27,7 +27,7 @@ def create_api_and_redis_keys(sender, instance, created, **kwargs):
         try:
             # Create an API key
             api_key = uuid.uuid4()
-            APIKey.objects.create(
+            UserAPIKey.objects.create(
                 profile=instance,
                 name=f"API Key for {instance.user.username}",
                 key=str(api_key)

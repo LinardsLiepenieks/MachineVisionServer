@@ -1,8 +1,9 @@
 from django.urls import re_path
-from . import consumers
+from .consumers.UserConsumer import UserConsumer
+from .consumers.MachineConsumer import MachineConsumer
 
 websocket_urlpatterns = [
-    #re_path(r'wsapi/$', consumers.YourConsumer.as_asgi()),
-    re_path(r'wsapi/users/$', consumers.UserConsumer.as_asgi()),
-    re_path(r'wsapi/machines/$', consumers.MachineConsumer.as_asgi()),
+    # re_path(r'wsapi/$', consumers.YourConsumer.as_asgi()),
+    re_path(r"wsapi/users/$", UserConsumer.as_asgi()),
+    re_path(r"wsapi/machines/$", MachineConsumer.as_asgi()),
 ]

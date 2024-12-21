@@ -3,11 +3,11 @@ from django.contrib import admin
 # Register your models here.
 from django.contrib import admin
 from .models import Profile
-from api.models import APIKey
+from api.models import UserAPIKey
 from machines.models import Machine
 
 class ApiKeyInline(admin.TabularInline):
-    model = APIKey
+    model = UserAPIKey
     extra = 0
     fields = ('name', 'key', 'is_active')
     readonly_fields = ('key',)
@@ -26,7 +26,7 @@ class ProfileAdmin(admin.ModelAdmin):
 
     def first_api_key(self, obj):
         # Retrieve the first API key related to this profile
-        api_key = APIKey.objects.filter(profile=obj).first()
+        api_key = UserAPIKey.objects.filter(profile=obj).first()
         return api_key.key if api_key else "No API key"
     
     first_api_key.short_description = 'API Key'
